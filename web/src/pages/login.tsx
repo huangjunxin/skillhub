@@ -28,7 +28,7 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<{ username?: string, password?: string }>({})
   const isChinese = i18n.resolvedLanguage?.split('-')[0] === 'zh'
-  const { data: authMethods, hasOAuth, registrationEnabled, passwordResetEnabled } = useAuthCapabilities(search.returnTo)
+  const { methods: authMethods, hasOAuth, registrationEnabled, passwordResetEnabled } = useAuthCapabilities(search.returnTo)
 
   const returnTo = search.returnTo && search.returnTo.startsWith('/') ? search.returnTo : '/dashboard'
   const disabledMessage = search.reason === 'accountDisabled' ? t('apiError.auth.accountDisabled') : null

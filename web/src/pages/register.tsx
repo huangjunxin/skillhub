@@ -56,7 +56,7 @@ export function RegisterPage() {
   const navigate = useNavigate()
   const search = useSearch({ from: '/register' })
   const registerMutation = useLocalRegister()
-  const { registrationEnabled, hasOAuth } = useAuthCapabilities(search.returnTo)
+  const { registrationEnabled } = useAuthCapabilities(search.returnTo)
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')

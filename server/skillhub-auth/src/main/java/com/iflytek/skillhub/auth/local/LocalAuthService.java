@@ -82,6 +82,7 @@ public class LocalAuthService {
     }
 
     private PlatformPrincipal doRegister(String username, String password, String email) {
+        String normalizedUsername = normalizeUsername(username);
         validateUsername(normalizedUsername);
 
         if (credentialRepository.existsByUsernameIgnoreCase(normalizedUsername)) {
