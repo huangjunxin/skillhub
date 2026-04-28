@@ -2,6 +2,9 @@ package com.iflytek.skillhub.service;
 
 import com.iflytek.skillhub.auth.entity.Role;
 import com.iflytek.skillhub.auth.entity.UserRoleBinding;
+import com.iflytek.skillhub.auth.local.LocalAuthService;
+import com.iflytek.skillhub.auth.local.LocalCredentialRepository;
+import com.iflytek.skillhub.auth.local.PasswordPolicyValidator;
 import com.iflytek.skillhub.auth.repository.RoleRepository;
 import com.iflytek.skillhub.auth.repository.UserRoleBindingRepository;
 import com.iflytek.skillhub.domain.shared.exception.DomainBadRequestException;
@@ -16,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
@@ -35,11 +39,19 @@ class AdminUserAppServiceTest {
     private final UserRoleBindingRepository userRoleBindingRepository = mock(UserRoleBindingRepository.class);
     private final RoleRepository roleRepository = mock(RoleRepository.class);
     private final UserAccountRepository userAccountRepository = mock(UserAccountRepository.class);
+    private final LocalCredentialRepository credentialRepository = mock(LocalCredentialRepository.class);
+    private final PasswordPolicyValidator passwordPolicyValidator = new PasswordPolicyValidator();
+    private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
+    private final LocalAuthService localAuthService = mock(LocalAuthService.class);
     private final AdminUserAppService service = new AdminUserAppService(
             adminUserSearchRepository,
             userAccountRepository,
             userRoleBindingRepository,
-            roleRepository
+            roleRepository,
+            credentialRepository,
+            passwordPolicyValidator,
+            passwordEncoder,
+            localAuthService
     );
 
     @Test

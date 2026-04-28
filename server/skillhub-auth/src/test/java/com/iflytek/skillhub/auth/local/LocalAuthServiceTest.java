@@ -55,6 +55,8 @@ class LocalAuthServiceTest {
 
     @BeforeEach
     void setUp() {
+        LocalAuthProperties localAuthProperties = new LocalAuthProperties();
+        localAuthProperties.setRegistrationEnabled(true);
         service = new LocalAuthService(
             credentialRepository,
             userAccountRepository,
@@ -62,6 +64,7 @@ class LocalAuthServiceTest {
             globalNamespaceMembershipService,
             new PasswordPolicyValidator(),
             passwordEncoder,
+            localAuthProperties,
             CLOCK
         );
     }

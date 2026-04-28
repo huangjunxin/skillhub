@@ -9,6 +9,9 @@ import com.iflytek.skillhub.auth.direct.DirectAuthRequest;
 import com.iflytek.skillhub.auth.rbac.PlatformPrincipal;
 import com.iflytek.skillhub.config.AuthSessionBootstrapProperties;
 import com.iflytek.skillhub.config.DirectAuthProperties;
+import com.iflytek.skillhub.config.OAuthVisibilityProperties;
+import com.iflytek.skillhub.auth.local.LocalAuthProperties;
+import com.iflytek.skillhub.auth.local.PasswordResetProperties;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -23,6 +26,12 @@ class AuthMethodCatalogTest {
         directAuthProperties.setEnabled(true);
         AuthSessionBootstrapProperties bootstrapProperties = new AuthSessionBootstrapProperties();
         bootstrapProperties.setEnabled(true);
+        OAuthVisibilityProperties oauthVisibilityProperties = new OAuthVisibilityProperties();
+        oauthVisibilityProperties.setEnabled(true);
+        LocalAuthProperties localAuthProperties = new LocalAuthProperties();
+        localAuthProperties.setRegistrationEnabled(true);
+        PasswordResetProperties passwordResetProperties = new PasswordResetProperties();
+        passwordResetProperties.setEnabled(true);
 
         DirectAuthProvider directProvider = new DirectAuthProvider() {
             @Override
@@ -60,8 +69,11 @@ class AuthMethodCatalogTest {
 
         AuthMethodCatalog catalog = new AuthMethodCatalog(
             oauthProperties,
+            oauthVisibilityProperties,
             directAuthProperties,
             bootstrapProperties,
+            localAuthProperties,
+            passwordResetProperties,
             List.of(directProvider),
             List.of(bootstrapProvider)
         );
@@ -70,6 +82,8 @@ class AuthMethodCatalogTest {
             .extracting(method -> method.id() + ":" + method.displayName())
             .contains(
                 "local-password:Local Account",
+                "local-registration:Local Registration",
+                "local-password-reset:Password Reset",
                 "direct-private-sso:Enterprise Password",
                 "bootstrap-private-sso:Enterprise SSO"
             );
@@ -82,6 +96,12 @@ class AuthMethodCatalogTest {
         directAuthProperties.setEnabled(true);
         AuthSessionBootstrapProperties bootstrapProperties = new AuthSessionBootstrapProperties();
         bootstrapProperties.setEnabled(true);
+        OAuthVisibilityProperties oauthVisibilityProperties = new OAuthVisibilityProperties();
+        oauthVisibilityProperties.setEnabled(true);
+        LocalAuthProperties localAuthProperties = new LocalAuthProperties();
+        localAuthProperties.setRegistrationEnabled(true);
+        PasswordResetProperties passwordResetProperties = new PasswordResetProperties();
+        passwordResetProperties.setEnabled(true);
 
         DirectAuthProvider directProvider = new DirectAuthProvider() {
             @Override
@@ -109,8 +129,11 @@ class AuthMethodCatalogTest {
 
         AuthMethodCatalog catalog = new AuthMethodCatalog(
             oauthProperties,
+            oauthVisibilityProperties,
             directAuthProperties,
             bootstrapProperties,
+            localAuthProperties,
+            passwordResetProperties,
             List.of(directProvider),
             List.of(bootstrapProvider)
         );
@@ -118,6 +141,8 @@ class AuthMethodCatalogTest {
         assertThat(catalog.listMethods(null))
             .extracting(method -> method.id() + ":" + method.displayName())
             .contains(
+                "local-registration:Local Registration",
+                "local-password-reset:Password Reset",
                 "direct-private-sso:private-sso",
                 "bootstrap-private-sso:private-sso"
             );
