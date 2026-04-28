@@ -2,8 +2,13 @@ package com.iflytek.skillhub.service;
 
 import com.iflytek.skillhub.auth.entity.Role;
 import com.iflytek.skillhub.auth.entity.UserRoleBinding;
+import com.iflytek.skillhub.auth.local.LocalCredentialRepository;
+import com.iflytek.skillhub.auth.local.LocalAuthService;
+import com.iflytek.skillhub.auth.local.PasswordPolicyValidator;
 import com.iflytek.skillhub.auth.repository.RoleRepository;
 import com.iflytek.skillhub.auth.repository.UserRoleBindingRepository;
+import com.iflytek.skillhub.auth.rbac.PlatformPrincipal;
+import com.iflytek.skillhub.auth.rbac.PlatformRoleDefaults;
 import com.iflytek.skillhub.domain.shared.exception.DomainBadRequestException;
 import com.iflytek.skillhub.domain.shared.exception.DomainForbiddenException;
 import com.iflytek.skillhub.domain.shared.exception.DomainNotFoundException;
@@ -14,10 +19,14 @@ import com.iflytek.skillhub.dto.AdminUserMutationResponse;
 import com.iflytek.skillhub.dto.AdminUserSummaryResponse;
 import com.iflytek.skillhub.dto.PageResponse;
 import com.iflytek.skillhub.repository.AdminUserSearchRepository;
+import com.iflytek.skillhub.auth.exception.AuthFlowException;
+import com.iflytek.skillhub.auth.local.LocalCredential;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -27,6 +36,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -42,16 +52,28 @@ public class AdminUserAppService {
     private final UserAccountRepository userAccountRepository;
     private final UserRoleBindingRepository userRoleBindingRepository;
     private final RoleRepository roleRepository;
+    private final LocalCredentialRepository credentialRepository;
+    private final PasswordPolicyValidator passwordPolicyValidator;
+    private final PasswordEncoder passwordEncoder;
+    private final LocalAuthService localAuthService;
 
     public AdminUserAppService(
             AdminUserSearchRepository adminUserSearchRepository,
             UserAccountRepository userAccountRepository,
             UserRoleBindingRepository userRoleBindingRepository,
-            RoleRepository roleRepository) {
+            RoleRepository roleRepository,
+            LocalCredentialRepository credentialRepository,
+            PasswordPolicyValidator passwordPolicyValidator,
+            PasswordEncoder passwordEncoder,
+            LocalAuthService localAuthService) {
         this.adminUserSearchRepository = adminUserSearchRepository;
         this.userAccountRepository = userAccountRepository;
         this.userRoleBindingRepository = userRoleBindingRepository;
         this.roleRepository = roleRepository;
+        this.credentialRepository = credentialRepository;
+        this.passwordPolicyValidator = passwordPolicyValidator;
+        this.passwordEncoder = passwordEncoder;
+        this.localAuthService = localAuthService;
     }
 
     @Transactional(readOnly = true)
@@ -106,6 +128,34 @@ public class AdminUserAppService {
         user.setStatus(nextStatus);
         userAccountRepository.save(user);
         return new AdminUserMutationResponse(user.getId(), null, nextStatus.name());
+    }
+
+    @Transactional
+    public AdminUserMutationResponse createUser(String username, String password, String email, String displayName) {
+        PlatformPrincipal principal = localAuthService.adminRegister(username, password, email);
+        UserAccount user = userAccountRepository.findById(principal.userId())
+                .orElseThrow(() -> new DomainNotFoundException("error.admin.user.notFound", principal.userId()));
+        user.setDisplayName(displayName);
+        userAccountRepository.save(user);
+        return new AdminUserMutationResponse(user.getId(), null, user.getStatus().name());
+    }
+
+    @Transactional
+    public AdminUserMutationResponse setPassword(String userId, String newPassword) {
+        UserAccount user = loadUser(userId);
+        LocalCredential credential = credentialRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new AuthFlowException(HttpStatus.BAD_REQUEST, "error.auth.local.notEnabled"));
+
+        var passwordErrors = passwordPolicyValidator.validate(newPassword);
+        if (!passwordErrors.isEmpty()) {
+            throw new AuthFlowException(HttpStatus.BAD_REQUEST, passwordErrors.getFirst());
+        }
+
+        credential.setPasswordHash(passwordEncoder.encode(newPassword));
+        credential.setFailedAttempts(0);
+        credential.setLockedUntil(null);
+        credentialRepository.save(credential);
+        return new AdminUserMutationResponse(user.getId(), null, user.getStatus().name());
     }
 
     private UserStatus parseManageableStatus(String status) {

@@ -248,7 +248,10 @@
     "passwordTooShort": "Password must be at least 8 characters",
     "passwordTooWeak": "Password must contain at least 3 character types (uppercase, lowercase, numbers, special)",
     "emailInvalid": "Invalid email format",
-    "emailExists": "Email already exists"
+    "emailExists": "Email already exists",
+    "disabledSubtitle": "Registration is currently closed.",
+    "disabledMessage": "New account registration has been disabled. Please contact an administrator to create an account for you.",
+    "backToLogin": "Back to login"
   },
   "resetPassword": {
     "title": "Reset Password",
@@ -273,7 +276,9 @@
     "submitting": "Resetting...",
     "successMessage": "Password reset successful. Please sign in with your new password.",
     "genericError": "Failed to reset password",
-    "backToLogin": "Back to login"
+    "backToLogin": "Back to login",
+    "disabledSubtitle": "Password reset is currently unavailable.",
+    "disabledMessage": "Password reset via email verification has been disabled. Please contact an administrator to reset your password."
   },
   "device": {
     "title": "Device Authorization",
@@ -557,6 +562,22 @@
     "disable": "Disable",
     "enable": "Enable",
     "resetPassword": "Reset Password",
+    "setPassword": "Set Password",
+    "createUser": "Create User",
+    "userList": "Users",
+    "createUserTitle": "Create New User",
+    "createUserDesc": "Create a local account with username, email, and password.",
+    "usernameLabel": "Username",
+    "usernamePlaceholder": "Enter username",
+    "displayNameLabel": "Display Name",
+    "displayNamePlaceholder": "Enter display name",
+    "emailLabel": "Email",
+    "emailPlaceholder": "Enter email address",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Enter password",
+    "newPasswordLabel": "New Password",
+    "newPasswordPlaceholder": "Enter new password",
+    "confirmSetPassword": "Set a new password for user {{username}}?",
     "totalRecords": "Total {{total}} records, page {{page}}",
     "prevPage": "Previous",
     "nextPage": "Next",

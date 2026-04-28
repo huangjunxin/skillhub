@@ -8,9 +8,18 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "skillhub.auth.password-reset")
 public class PasswordResetProperties {
 
+    private boolean enabled = true;
     private Duration codeExpiry = Duration.ofMinutes(10);
     private String emailFromAddress = "noreply@skillhub.local";
     private String emailFromName = "SkillHub";
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
 
     public Duration getCodeExpiry() {
         return codeExpiry;

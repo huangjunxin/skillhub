@@ -107,3 +107,26 @@ export function useTriggerUserPasswordReset() {
     },
   })
 }
+
+export function useCreateUser() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ username, password, email, displayName }: {
+      username: string; password: string; email: string; displayName: string
+    }) => adminApi.createUser(username, password, email, displayName),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
+    },
+  })
+}
+
+export function useSetPassword() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ userId, newPassword }: { userId: string; newPassword: string }) =>
+      adminApi.setPassword(userId, newPassword),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
+    },
+  })
+}

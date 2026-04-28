@@ -3,6 +3,8 @@ package com.iflytek.skillhub.controller.admin;
 import com.iflytek.skillhub.controller.BaseApiController;
 import com.iflytek.skillhub.auth.local.PasswordResetService;
 import com.iflytek.skillhub.auth.rbac.PlatformPrincipal;
+import com.iflytek.skillhub.dto.AdminCreateUserRequest;
+import com.iflytek.skillhub.dto.AdminSetPasswordRequest;
 import com.iflytek.skillhub.dto.AdminUserMutationResponse;
 import com.iflytek.skillhub.dto.AdminUserRoleUpdateRequest;
 import com.iflytek.skillhub.dto.AdminUserStatusUpdateRequest;
@@ -17,10 +19,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * Administrative endpoints for listing users and mutating user roles or
- * account status.
- */
 @RestController
 @RequestMapping("/api/v1/admin/users")
 public class UserManagementController extends BaseApiController {
@@ -44,6 +42,15 @@ public class UserManagementController extends BaseApiController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         return ok("response.success.read", adminUserAppService.listUsers(search, status, page, size));
+    }
+
+    @PostMapping
+    @PreAuthorize("hasAnyRole('USER_ADMIN', 'SUPER_ADMIN')")
+    public ApiResponse<AdminUserMutationResponse> createUser(
+            @Valid @RequestBody AdminCreateUserRequest request) {
+        return ok("response.success.created",
+                adminUserAppService.createUser(
+                        request.username(), request.password(), request.email(), request.displayName()));
     }
 
     @PutMapping("/{userId}/role")
@@ -91,5 +98,13 @@ public class UserManagementController extends BaseApiController {
         }
         passwordResetService.adminTriggerPasswordReset(userId, principal.userId());
         return ok("response.auth.password.reset.requested", null);
+    }
+
+    @PostMapping("/{userId}/set-password")
+    @PreAuthorize("hasAnyRole('USER_ADMIN', 'SUPER_ADMIN')")
+    public ApiResponse<AdminUserMutationResponse> setPassword(@PathVariable String userId,
+                                                              @Valid @RequestBody AdminSetPasswordRequest request) {
+        return ok("response.success.updated",
+                adminUserAppService.setPassword(userId, request.newPassword()));
     }
 }

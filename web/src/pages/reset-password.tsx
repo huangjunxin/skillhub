@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { authApi } from '@/api/client'
+import { useAuthCapabilities } from '@/features/auth/use-auth-methods'
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
 import { Input } from '@/shared/ui/input'
@@ -11,6 +12,7 @@ import { Input } from '@/shared/ui/input'
  */
 export function ResetPasswordPage() {
   const { t } = useTranslation()
+  const { passwordResetEnabled } = useAuthCapabilities()
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -85,6 +87,27 @@ export function ResetPasswordPage() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  if (!passwordResetEnabled) {
+    return (
+      <div className="mx-auto flex min-h-[70vh] max-w-2xl items-center justify-center">
+        <Card className="w-full border-slate-200 bg-white/95 shadow-xl">
+          <CardHeader className="space-y-3 text-center">
+            <CardTitle>{t('resetPassword.title')}</CardTitle>
+            <CardDescription>{t('resetPassword.disabledSubtitle')}</CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-muted-foreground">{t('resetPassword.disabledMessage')}</p>
+            <div className="mt-4">
+              <Link to="/login" search={{ returnTo: '' }} className="font-medium text-primary hover:underline">
+                {t('resetPassword.backToLogin')}
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (

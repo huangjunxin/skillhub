@@ -43,6 +43,7 @@ public class LocalAuthService {
     private final GlobalNamespaceMembershipService globalNamespaceMembershipService;
     private final PasswordPolicyValidator passwordPolicyValidator;
     private final PasswordEncoder passwordEncoder;
+    private final LocalAuthProperties localAuthProperties;
     private final Clock clock;
 
     public LocalAuthService(LocalCredentialRepository credentialRepository,
@@ -51,6 +52,7 @@ public class LocalAuthService {
                             GlobalNamespaceMembershipService globalNamespaceMembershipService,
                             PasswordPolicyValidator passwordPolicyValidator,
                             PasswordEncoder passwordEncoder,
+                            LocalAuthProperties localAuthProperties,
                             Clock clock) {
         this.credentialRepository = credentialRepository;
         this.userAccountRepository = userAccountRepository;
@@ -58,6 +60,7 @@ public class LocalAuthService {
         this.globalNamespaceMembershipService = globalNamespaceMembershipService;
         this.passwordPolicyValidator = passwordPolicyValidator;
         this.passwordEncoder = passwordEncoder;
+        this.localAuthProperties = localAuthProperties;
         this.clock = clock;
     }
 
@@ -67,7 +70,18 @@ public class LocalAuthService {
      */
     @Transactional
     public PlatformPrincipal register(String username, String password, String email) {
-        String normalizedUsername = normalizeUsername(username);
+        if (!localAuthProperties.isRegistrationEnabled()) {
+            throw new AuthFlowException(HttpStatus.FORBIDDEN, "error.auth.local.registration.disabled");
+        }
+        return doRegister(username, password, email);
+    }
+
+    @Transactional
+    public PlatformPrincipal adminRegister(String username, String password, String email) {
+        return doRegister(username, password, email);
+    }
+
+    private PlatformPrincipal doRegister(String username, String password, String email) {
         validateUsername(normalizedUsername);
 
         if (credentialRepository.existsByUsernameIgnoreCase(normalizedUsername)) {

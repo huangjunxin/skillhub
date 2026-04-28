@@ -1122,6 +1122,22 @@ export const adminApi = {
     })
   },
 
+  async createUser(username: string, password: string, email: string, displayName: string): Promise<void> {
+    await fetchJson<void>(`/api/v1/admin/users`, {
+      method: 'POST',
+      headers: getCsrfHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ username, password, email, displayName }),
+    })
+  },
+
+  async setPassword(userId: string, newPassword: string): Promise<void> {
+    await fetchJson<void>(`/api/v1/admin/users/${userId}/set-password`, {
+      method: 'POST',
+      headers: getCsrfHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ newPassword }),
+    })
+  },
+
   async getAuditLogs(params: {
     action?: string
     userId?: string

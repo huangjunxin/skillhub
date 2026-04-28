@@ -64,6 +64,7 @@ public class PasswordResetService {
      */
     @Transactional
     public void requestPasswordReset(String email) {
+        assertPasswordResetEnabled();
         String normalizedEmail = normalizeEmail(email);
         validateEmail(normalizedEmail);
         Optional<UserAccount> userOpt = findEligibleUserByEmail(normalizedEmail);
@@ -95,6 +96,7 @@ public class PasswordResetService {
      */
     @Transactional
     public void adminTriggerPasswordReset(String userId, String adminUserId) {
+        assertPasswordResetEnabled();
         UserAccount user = userAccountRepository.findById(userId)
                 .orElseThrow(() -> new AuthFlowException(HttpStatus.NOT_FOUND, "error.admin.user.notFound", userId));
 
@@ -124,6 +126,7 @@ public class PasswordResetService {
      */
     @Transactional
     public void confirmPasswordReset(String email, String code, String newPassword) {
+        assertPasswordResetEnabled();
         String normalizedEmail = normalizeEmail(email);
         validateEmail(normalizedEmail);
         UserAccount user = findUserByEmail(normalizedEmail)
@@ -192,6 +195,12 @@ public class PasswordResetService {
             return null;
         }
         return email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private void assertPasswordResetEnabled() {
+        if (!properties.isEnabled()) {
+            throw new AuthFlowException(HttpStatus.FORBIDDEN, "error.auth.password.reset.disabled");
+        }
     }
 
     private void validateEmail(String email) {

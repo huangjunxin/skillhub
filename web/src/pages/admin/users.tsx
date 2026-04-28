@@ -32,9 +32,10 @@ import { Label } from '@/shared/ui/label'
 import {
   useAdminUsers,
   useApproveUser,
+  useCreateUser,
   useDisableUser,
   useEnableUser,
-  useTriggerUserPasswordReset,
+  useSetPassword,
   useUpdateUserRole,
 } from '@/features/admin/use-admin-users'
 import type { AdminUser } from '@/features/admin/use-admin-users'
@@ -61,7 +62,13 @@ export function AdminUsersPage() {
   const [roleDialogOpen, setRoleDialogOpen] = useState(false)
   const [newRole, setNewRole] = useState('')
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
-  const [actionType, setActionType] = useState<'ban' | 'unban' | 'reset'>('ban')
+  const [actionType, setActionType] = useState<'ban' | 'unban' | 'setPassword'>('ban')
+  const [createUserDialogOpen, setCreateUserDialogOpen] = useState(false)
+  const [newUsername, setNewUsername] = useState('')
+  const [newEmail, setNewEmail] = useState('')
+  const [newUserPassword, setNewUserPassword] = useState('')
+  const [newDisplayName, setNewDisplayName] = useState('')
+  const [setPasswordValue, setSetPasswordValue] = useState('')
 
   const { data, isLoading } = useAdminUsers({
     search,
@@ -74,7 +81,8 @@ export function AdminUsersPage() {
   const approveUserMutation = useApproveUser()
   const disableUserMutation = useDisableUser()
   const enableUserMutation = useEnableUser()
-  const triggerPasswordResetMutation = useTriggerUserPasswordReset()
+  const setPasswordMutation = useSetPassword()
+  const createUserMutation = useCreateUser()
 
   const formatDate = (dateString: string) => {
     return formatLocalDateTime(dateString, i18n.language)
@@ -113,9 +121,10 @@ export function AdminUsersPage() {
     setConfirmDialogOpen(true)
   }
 
-  const handleTriggerPasswordReset = (user: AdminUser) => {
+  const handleSetPassword = (user: AdminUser) => {
     setSelectedUser(user)
-    setActionType('reset')
+    setActionType('setPassword')
+    setSetPasswordValue('')
     setConfirmDialogOpen(true)
   }
 
@@ -137,13 +146,32 @@ export function AdminUsersPage() {
         await disableUserMutation.mutateAsync(selectedUser.userId)
       } else if (actionType === 'unban') {
         await enableUserMutation.mutateAsync(selectedUser.userId)
-      } else {
-        await triggerPasswordResetMutation.mutateAsync(selectedUser.userId)
+      } else if (actionType === 'setPassword') {
+        if (!setPasswordValue) return
+        await setPasswordMutation.mutateAsync({ userId: selectedUser.userId, newPassword: setPasswordValue })
       }
       setConfirmDialogOpen(false)
       setSelectedUser(null)
     } catch (error) {
       console.error('Failed to apply user action:', error)
+    }
+  }
+
+  const confirmCreateUser = async () => {
+    try {
+      await createUserMutation.mutateAsync({
+        username: newUsername.trim(),
+        password: newUserPassword,
+        email: newEmail.trim(),
+        displayName: newDisplayName.trim(),
+      })
+      setCreateUserDialogOpen(false)
+      setNewUsername('')
+      setNewEmail('')
+      setNewUserPassword('')
+      setNewDisplayName('')
+    } catch (error) {
+      console.error('Failed to create user:', error)
     }
   }
 
@@ -155,6 +183,12 @@ export function AdminUsersPage() {
       </div>
 
       <Card className="p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold">{t('adminUsers.userList')}</h2>
+          <Button onClick={() => setCreateUserDialogOpen(true)}>
+            {t('adminUsers.createUser')}
+          </Button>
+        </div>
         <div className="grid gap-4 md:grid-cols-[minmax(0,1.6fr)_220px]">
           <div className="space-y-2">
             <Label htmlFor="admin-user-search">{t('adminUsers.searchLabel')}</Label>
@@ -278,9 +312,9 @@ export function AdminUsersPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleTriggerPasswordReset(user)}
+                          onClick={() => handleSetPassword(user)}
                         >
-                          {t('adminUsers.resetPassword')}
+                          {t('adminUsers.setPassword')}
                         </Button>
                       </div>
                     </TableCell>
@@ -369,16 +403,90 @@ export function AdminUsersPage() {
                 ? t('adminUsers.confirmDisable', { username: selectedUser?.username })
                 : actionType === 'unban'
                   ? t('adminUsers.confirmEnable', { username: selectedUser?.username })
-                  : t('adminUsers.confirmResetPassword', { username: selectedUser?.username })}
+                  : t('adminUsers.confirmSetPassword', { username: selectedUser?.username })}
             </DialogDescription>
           </DialogHeader>
+          {actionType === 'setPassword' ? (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="admin-set-password">{t('adminUsers.newPasswordLabel')}</Label>
+                <Input
+                  id="admin-set-password"
+                  type="password"
+                  value={setPasswordValue}
+                  onChange={(e) => setSetPasswordValue(e.target.value)}
+                  placeholder={t('adminUsers.newPasswordPlaceholder')}
+                />
+              </div>
+            </div>
+          ) : null}
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmDialogOpen(false)}>
               {t('dialog.cancel')}
             </Button>
             <Button
               onClick={confirmUserAction}
-              disabled={disableUserMutation.isPending || enableUserMutation.isPending || triggerPasswordResetMutation.isPending}
+              disabled={disableUserMutation.isPending || enableUserMutation.isPending || setPasswordMutation.isPending || (actionType === 'setPassword' && !setPasswordValue)}
+            >
+              {t('dialog.confirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={createUserDialogOpen} onOpenChange={setCreateUserDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('adminUsers.createUserTitle')}</DialogTitle>
+            <DialogDescription>{t('adminUsers.createUserDesc')}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="create-user-username">{t('adminUsers.usernameLabel')}</Label>
+              <Input
+                id="create-user-username"
+                value={newUsername}
+                onChange={(e) => setNewUsername(e.target.value)}
+                placeholder={t('adminUsers.usernamePlaceholder')}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="create-user-display-name">{t('adminUsers.displayNameLabel')}</Label>
+              <Input
+                id="create-user-display-name"
+                value={newDisplayName}
+                onChange={(e) => setNewDisplayName(e.target.value)}
+                placeholder={t('adminUsers.displayNamePlaceholder')}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="create-user-email">{t('adminUsers.emailLabel')}</Label>
+              <Input
+                id="create-user-email"
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder={t('adminUsers.emailPlaceholder')}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="create-user-password">{t('adminUsers.passwordLabel')}</Label>
+              <Input
+                id="create-user-password"
+                type="password"
+                value={newUserPassword}
+                onChange={(e) => setNewUserPassword(e.target.value)}
+                placeholder={t('adminUsers.passwordPlaceholder')}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateUserDialogOpen(false)}>
+              {t('dialog.cancel')}
+            </Button>
+            <Button
+              onClick={confirmCreateUser}
+              disabled={createUserMutation.isPending || !newUsername || !newEmail || !newUserPassword || !newDisplayName}
             >
               {t('dialog.confirm')}
             </Button>

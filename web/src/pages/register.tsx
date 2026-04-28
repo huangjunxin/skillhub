@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ApiError } from '@/api/client'
 import { LoginButton } from '@/features/auth/login-button'
+import { useAuthCapabilities } from '@/features/auth/use-auth-methods'
 import { useLocalRegister } from '@/features/auth/use-local-auth'
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
@@ -55,6 +56,7 @@ export function RegisterPage() {
   const navigate = useNavigate()
   const search = useSearch({ from: '/register' })
   const registerMutation = useLocalRegister()
+  const { registrationEnabled, hasOAuth } = useAuthCapabilities(search.returnTo)
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -164,6 +166,27 @@ export function RegisterPage() {
       setFieldErrors(nextApiFieldErrors ?? {})
       setFormError(nextFormError ?? null)
     }
+  }
+
+  if (!registrationEnabled) {
+    return (
+      <div className="mx-auto flex min-h-[70vh] max-w-2xl items-center justify-center">
+        <Card className="w-full border-slate-200 bg-white/95 shadow-xl">
+          <CardHeader className="space-y-3 text-center">
+            <CardTitle>{t('register.title')}</CardTitle>
+            <CardDescription>{t('register.disabledSubtitle')}</CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-muted-foreground">{t('register.disabledMessage')}</p>
+            <div className="mt-4">
+              <Link to="/login" search={{ returnTo }} className="font-medium text-primary hover:underline">
+                {t('register.backToLogin')}
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
